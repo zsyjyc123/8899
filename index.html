@@ -1,0 +1,753 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>进销存仓单平台</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    body {
+      background-color: #f2f4f7;
+      display: flex;
+      justify-content: center;
+      padding: 12px 8px;
+    }
+    .app-container {
+      width: 100%;
+      max-width: 420px;
+      background-color: #f5f6f9;
+      border-radius: 24px;
+      padding: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+    .card {
+      background: #ffffff;
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+    }
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px 8px;
+      text-align: center;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      text-align: center;
+    }
+    /* 导航图标 */
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      transition: transform 0.1s ease;
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: inherit;
+    }
+    .nav-item:active { transform: scale(0.95); }
+    .icon-box {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      margin-bottom: 6px;
+    }
+    .nav-label { font-size: 13px; color: #333; font-weight: 500; }
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .section-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1a1a1a;
+      display: flex;
+      align-items: center;
+    }
+    .badge {
+      background-color: #ff4d4f;
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+      padding: 2px 7px;
+      border-radius: 10px;
+      margin-left: 6px;
+    }
+    .more-link, .edit-btn {
+      font-size: 13px;
+      color: #8c8c8c;
+      cursor: pointer;
+      border: none;
+      background: none;
+    }
+    .todo-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #fafafa;
+      padding: 10px 4px;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+    .todo-count { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+    .todo-count span { font-size: 12px; font-weight: normal; margin-left: 2px; }
+    .text-danger { color: #f5222d; }
+    .text-blue { color: #1890ff; }
+    .todo-label { font-size: 12px; color: #666; display: flex; align-items: center; }
+    .dot {
+      width: 5px;
+      height: 5px;
+      background-color: #f5222d;
+      border-radius: 50%;
+      margin-right: 4px;
+    }
+    .app-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: inherit;
+    }
+    .app-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: #f0f5ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      margin-bottom: 6px;
+    }
+    .app-name { font-size: 13px; color: #434343; }
+
+    /* 页面切换 */
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* 表单 & 列表 */
+    input, select, textarea, button {
+      width: 100%;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      font-size: 14px;
+      background: #fafafa;
+    }
+    button {
+      background: #1890ff;
+      color: white;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button.danger { background: #ff4d4f; }
+    button.green { background: #52c41a; }
+    .list-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .list-item .info { flex: 1; }
+    .list-item .actions button { width: auto; padding: 4px 10px; margin: 0 4px; font-size: 12px; }
+    .back-btn { background: none; color: #1890ff; border: none; font-size: 14px; cursor: pointer; padding: 0; margin-bottom: 12px; text-align: left; }
+    .back-btn::before { content: "? "; font-size: 20px; }
+    .row { display: flex; gap: 8px; }
+    .row > * { flex: 1; }
+    .mt-10 { margin-top: 10px; }
+    .text-center { text-align: center; }
+    .summary-card { background: #f6f8fa; border-radius: 12px; padding: 12px; margin-bottom: 8px; }
+    .summary-card .number { font-size: 24px; font-weight: 700; }
+    .summary-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  </style>
+</head>
+<body>
+<div class="app-container">
+
+  <!-- ========== 首页 ========== -->
+  <div id="page-home" class="page active">
+    <!-- 快捷入口 -->
+    <div class="card grid-4">
+      <button class="nav-item" data-page="income">
+        <div class="icon-box" style="background:#e6f7ff;color:#1890ff;">??</div>
+        <span class="nav-label">记收入</span>
+      </button>
+      <button class="nav-item" data-page="expense">
+        <div class="icon-box" style="background:#fff1f0;color:#ff4d4f;">??</div>
+        <span class="nav-label">记开支</span>
+      </button>
+      <button class="nav-item" data-page="sale">
+        <div class="icon-box" style="background:#e6f7ff;color:#096dd9;">??</div>
+        <span class="nav-label">销售开单</span>
+      </button>
+      <button class="nav-item" data-page="purchase">
+        <div class="icon-box" style="background:#fff7e6;color:#fa8c16;">??</div>
+        <span class="nav-label">采购入库</span>
+      </button>
+      <button class="nav-item" data-page="inventory">
+        <div class="icon-box" style="background:#e6fffb;color:#13c2c2;">??</div>
+        <span class="nav-label">库存查询</span>
+      </button>
+      <button class="nav-item" data-page="report">
+        <div class="icon-box" style="background:#f9f0ff;color:#722ed1;">??</div>
+        <span class="nav-label">报表</span>
+      </button>
+      <button class="nav-item" data-page="customer">
+        <div class="icon-box" style="background:#e6f7ff;color:#2f54eb;">??</div>
+        <span class="nav-label">客户</span>
+      </button>
+      <button class="nav-item" data-page="supplier">
+        <div class="icon-box" style="background:#fffbe6;color:#faad14;">??</div>
+        <span class="nav-label">供应商</span>
+      </button>
+    </div>
+
+    <!-- 待办提醒 -->
+    <div class="card">
+      <div class="section-header">
+        <div class="section-title">待办提醒 <span class="badge" id="todo-badge">0</span></div>
+        <a class="more-link" id="todo-detail-link">全部 &gt;</a>
+      </div>
+      <div class="grid-4" id="todo-grid">
+        <div class="todo-item"><div class="todo-count text-danger">0<span>笔</span></div><div class="todo-label"><span class="dot"></span>应收逾期</div></div>
+        <div class="todo-item"><div class="todo-count text-blue">0<span>笔</span></div><div class="todo-label">今日待收款</div></div>
+        <div class="todo-item"><div class="todo-count text-blue">0<span>单</span></div><div class="todo-label">待发货</div></div>
+        <div class="todo-item"><div class="todo-count text-danger">0<span>个</span></div><div class="todo-label"><span class="dot"></span>临期/缺货</div></div>
+      </div>
+    </div>
+
+    <!-- 常用应用 -->
+    <div class="card">
+      <div class="section-header">
+        <div class="section-title">常用应用</div>
+        <button class="edit-btn" id="edit-apps">?? 编辑</button>
+      </div>
+      <div class="grid-3">
+        <button class="app-item" data-page="sale"><div class="app-icon">??</div><span class="app-name">开单</span></button>
+        <button class="app-item" data-page="inventory"><div class="app-icon">??</div><span class="app-name">库存查询</span></button>
+        <button class="app-item" data-page="customer"><div class="app-icon">??</div><span class="app-name">账户管理</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 通用列表/表单页（动态注入） ========== -->
+  <div id="page-detail" class="page">
+    <button class="back-btn" id="back-home">返回首页</button>
+    <div id="detail-content"></div>
+  </div>
+
+</div>
+
+<script>
+// ==================== 数据层 ====================
+const DB = {
+  get(key, def) { return JSON.parse(localStorage.getItem(key)) || def; },
+  set(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+};
+
+// 初始化示例数据
+function initData() {
+  if (!localStorage.getItem('income')) {
+    DB.set('income', [
+      { id: Date.now(), amount: 1200, category: '销售收入', date: '2026-09-08', note: '客户A' }
+    ]);
+  }
+  if (!localStorage.getItem('expense')) {
+    DB.set('expense', [
+      { id: Date.now()+1, amount: 300, category: '办公用品', date: '2026-09-07', note: '文具' }
+    ]);
+  }
+  if (!localStorage.getItem('customers')) {
+    DB.set('customers', [{ id: 1, name: '客户A', phone: '13800138000' }]);
+  }
+  if (!localStorage.getItem('suppliers')) {
+    DB.set('suppliers', [{ id: 1, name: '供应商B', phone: '13900139000' }]);
+  }
+  if (!localStorage.getItem('products')) {
+    DB.set('products', [
+      { id: 1, name: '商品X', price: 50, stock: 100 },
+      { id: 2, name: '商品Y', price: 80, stock: 50 }
+    ]);
+  }
+  if (!localStorage.getItem('sales')) {
+    DB.set('sales', [
+      { id: Date.now()+2, customer: '客户A', productId: 1, qty: 2, price: 50, total: 100, date: '2026-09-08', status: '待发货' }
+    ]);
+  }
+  if (!localStorage.getItem('purchases')) {
+    DB.set('purchases', [
+      { id: Date.now()+3, supplier: '供应商B', productId: 2, qty: 20, price: 60, total: 1200, date: '2026-09-06' }
+    ]);
+  }
+}
+initData();
+
+// ==================== 工具 ====================
+function genId() { return Date.now() + Math.random().toString(36).slice(2,6); }
+function today() { return new Date().toISOString().slice(0,10); }
+
+// ==================== 页面切换 ====================
+const homePage = document.getElementById('page-home');
+const detailPage = document.getElementById('page-detail');
+const detailContent = document.getElementById('detail-content');
+
+function showPage(pageId) {
+  homePage.classList.toggle('active', pageId === 'home');
+  detailPage.classList.toggle('active', pageId !== 'home');
+}
+
+// 返回首页
+document.getElementById('back-home').addEventListener('click', () => {
+  showPage('home');
+  renderHome();
+});
+
+// 所有导航按钮跳转
+document.querySelectorAll('[data-page]').forEach(el => {
+  el.addEventListener('click', (e) => {
+    const page = el.dataset.page;
+    if (page === 'home') { showPage('home'); renderHome(); return; }
+    showPage('detail');
+    renderPage(page);
+  });
+});
+
+// ==================== 渲染各个功能页 ====================
+function renderPage(type) {
+  let html = '';
+  switch(type) {
+    case 'income': html = renderIncomeForm(); break;
+    case 'expense': html = renderExpenseForm(); break;
+    case 'sale': html = renderSaleForm(); break;
+    case 'purchase': html = renderPurchaseForm(); break;
+    case 'inventory': html = renderInventory(); break;
+    case 'report': html = renderReport(); break;
+    case 'customer': html = renderCustomer(); break;
+    case 'supplier': html = renderSupplier(); break;
+    default: html = '<p>功能开发中</p>';
+  }
+  detailContent.innerHTML = html;
+  // 重新绑定事件
+  bindEvents(type);
+}
+
+// ---------- 记收入 ----------
+function renderIncomeForm() {
+  const incomes = DB.get('income', []);
+  let list = incomes.map(item => `
+    <div class="list-item">
+      <div class="info">${item.category} ￥${item.amount} <small>${item.date}</small><br><small>${item.note || ''}</small></div>
+      <div class="actions"><button class="danger" onclick="deleteItem('income','${item.id}')">删除</button></div>
+    </div>
+  `).join('');
+  return `
+    <h3>记收入</h3>
+    <div class="row">
+      <input type="number" id="income-amount" placeholder="金额" />
+      <input type="text" id="income-category" placeholder="分类" value="销售收入" />
+    </div>
+    <input type="date" id="income-date" value="${today()}" />
+    <input type="text" id="income-note" placeholder="备注" />
+    <button id="save-income" class="green">保存收入</button>
+    <hr>
+    <h4>收入记录</h4>
+    ${list || '<p>暂无记录</p>'}
+  `;
+}
+
+// ---------- 记开支 ----------
+function renderExpenseForm() {
+  const expenses = DB.get('expense', []);
+  let list = expenses.map(item => `
+    <div class="list-item">
+      <div class="info">${item.category} ￥${item.amount} <small>${item.date}</small><br><small>${item.note || ''}</small></div>
+      <div class="actions"><button class="danger" onclick="deleteItem('expense','${item.id}')">删除</button></div>
+    </div>
+  `).join('');
+  return `
+    <h3>记开支</h3>
+    <div class="row">
+      <input type="number" id="expense-amount" placeholder="金额" />
+      <input type="text" id="expense-category" placeholder="分类" value="办公费用" />
+    </div>
+    <input type="date" id="expense-date" value="${today()}" />
+    <input type="text" id="expense-note" placeholder="备注" />
+    <button id="save-expense" class="danger">保存开支</button>
+    <hr>
+    <h4>开支记录</h4>
+    ${list || '<p>暂无记录</p>'}
+  `;
+}
+
+// ---------- 销售开单 ----------
+function renderSaleForm() {
+  const customers = DB.get('customers', []);
+  const products = DB.get('products', []);
+  const sales = DB.get('sales', []);
+  let list = sales.map(s => {
+    const p = products.find(pr => pr.id === s.productId);
+    return `<div class="list-item"><div class="info">${s.customer} 购买 ${p?p.name:'未知'} x${s.qty} ￥${s.total} <small>${s.date}</small><br>状态: ${s.status}</div><div class="actions"><button class="danger" onclick="deleteItem('sales','${s.id}')">删除</button></div></div>`;
+  }).join('');
+  let customerOpts = customers.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+  let productOpts = products.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+  return `
+    <h3>销售开单</h3>
+    <select id="sale-customer"><option value="">选择客户</option>${customerOpts}</select>
+    <select id="sale-product"><option value="">选择商品</option>${productOpts}</select>
+    <div class="row">
+      <input type="number" id="sale-qty" placeholder="数量" min="1" value="1" />
+      <input type="number" id="sale-price" placeholder="单价" step="0.01" />
+    </div>
+    <input type="date" id="sale-date" value="${today()}" />
+    <select id="sale-status">
+      <option value="待发货">待发货</option>
+      <option value="已发货">已发货</option>
+      <option value="已完成">已完成</option>
+    </select>
+    <button id="save-sale" class="green">开单</button>
+    <hr>
+    <h4>销售订单</h4>
+    ${list || '<p>暂无订单</p>'}
+  `;
+}
+
+// ---------- 采购入库 ----------
+function renderPurchaseForm() {
+  const suppliers = DB.get('suppliers', []);
+  const products = DB.get('products', []);
+  const purchases = DB.get('purchases', []);
+  let list = purchases.map(p => {
+    const pr = products.find(x => x.id === p.productId);
+    return `<div class="list-item"><div class="info">${p.supplier} 采购 ${pr?pr.name:'未知'} x${p.qty} ￥${p.total} <small>${p.date}</small></div><div class="actions"><button class="danger" onclick="deleteItem('purchases','${p.id}')">删除</button></div></div>`;
+  }).join('');
+  let supplierOpts = suppliers.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+  let productOpts = products.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+  return `
+    <h3>采购入库</h3>
+    <select id="purchase-supplier"><option value="">选择供应商</option>${supplierOpts}</select>
+    <select id="purchase-product"><option value="">选择商品</option>${productOpts}</select>
+    <div class="row">
+      <input type="number" id="purchase-qty" placeholder="数量" min="1" value="1" />
+      <input type="number" id="purchase-price" placeholder="单价" step="0.01" />
+    </div>
+    <input type="date" id="purchase-date" value="${today()}" />
+    <button id="save-purchase" class="green">入库</button>
+    <hr>
+    <h4>采购记录</h4>
+    ${list || '<p>暂无记录</p>'}
+  `;
+}
+
+// ---------- 库存查询 ----------
+function renderInventory() {
+  const products = DB.get('products', []);
+  let list = products.map(p => `
+    <div class="list-item">
+      <div class="info"><b>${p.name}</b> 库存: ${p.stock}  单价: ￥${p.price}</div>
+      <div class="actions"><button onclick="editProduct('${p.id}')">编辑</button></div>
+    </div>
+  `).join('');
+  return `
+    <h3>库存查询</h3>
+    <div class="row">
+      <input type="text" id="new-product-name" placeholder="商品名称" />
+      <input type="number" id="new-product-price" placeholder="单价" step="0.01" />
+    </div>
+    <input type="number" id="new-product-stock" placeholder="库存数量" />
+    <button id="add-product" class="green">添加商品</button>
+    <hr>
+    ${list || '<p>暂无商品</p>'}
+  `;
+}
+
+// ---------- 报表 ----------
+function renderReport() {
+  const incomes = DB.get('income', []);
+  const expenses = DB.get('expense', []);
+  const totalIncome = incomes.reduce((s,i) => s + i.amount, 0);
+  const totalExpense = expenses.reduce((s,i) => s + i.amount, 0);
+  const profit = totalIncome - totalExpense;
+  return `
+    <h3>报表统计</h3>
+    <div class="summary-grid">
+      <div class="summary-card"><div>总收入</div><div class="number" style="color:#52c41a;">￥${totalIncome.toFixed(2)}</div></div>
+      <div class="summary-card"><div>总支出</div><div class="number" style="color:#ff4d4f;">￥${totalExpense.toFixed(2)}</div></div>
+      <div class="summary-card"><div>利润</div><div class="number" style="color:${profit>=0?'#1890ff':'#ff4d4f'};">￥${profit.toFixed(2)}</div></div>
+    </div>
+    <p style="margin-top:12px;">收入笔数: ${incomes.length}  支出笔数: ${expenses.length}</p>
+    <hr>
+    <h4>近7天趋势（简略）</h4>
+    <p>该演示仅展示汇总数据，详细趋势可导出分析。</p>
+  `;
+}
+
+// ---------- 客户管理 ----------
+function renderCustomer() {
+  const customers = DB.get('customers', []);
+  let list = customers.map(c => `
+    <div class="list-item">
+      <div class="info">${c.name}  ${c.phone||''}</div>
+      <div class="actions"><button class="danger" onclick="deleteItem('customers','${c.id}')">删除</button></div>
+    </div>
+  `).join('');
+  return `
+    <h3>客户管理</h3>
+    <div class="row">
+      <input type="text" id="customer-name" placeholder="客户名称" />
+      <input type="text" id="customer-phone" placeholder="电话" />
+    </div>
+    <button id="add-customer" class="green">添加客户</button>
+    <hr>
+    ${list || '<p>暂无客户</p>'}
+  `;
+}
+
+// ---------- 供应商管理 ----------
+function renderSupplier() {
+  const suppliers = DB.get('suppliers', []);
+  let list = suppliers.map(s => `
+    <div class="list-item">
+      <div class="info">${s.name}  ${s.phone||''}</div>
+      <div class="actions"><button class="danger" onclick="deleteItem('suppliers','${s.id}')">删除</button></div>
+    </div>
+  `).join('');
+  return `
+    <h3>供应商管理</h3>
+    <div class="row">
+      <input type="text" id="supplier-name" placeholder="供应商名称" />
+      <input type="text" id="supplier-phone" placeholder="电话" />
+    </div>
+    <button id="add-supplier" class="green">添加供应商</button>
+    <hr>
+    ${list || '<p>暂无供应商</p>'}
+  `;
+}
+
+// ==================== 事件绑定 ====================
+function bindEvents(type) {
+  switch(type) {
+    case 'income':
+      document.getElementById('save-income')?.addEventListener('click', () => {
+        const amount = parseFloat(document.getElementById('income-amount').value);
+        const category = document.getElementById('income-category').value.trim();
+        const date = document.getElementById('income-date').value;
+        const note = document.getElementById('income-note').value.trim();
+        if (!amount || !category) return alert('请填写金额和分类');
+        const incomes = DB.get('income', []);
+        incomes.push({ id: genId(), amount, category, date, note });
+        DB.set('income', incomes);
+        renderPage('income');
+        renderHome();
+      });
+      break;
+    case 'expense':
+      document.getElementById('save-expense')?.addEventListener('click', () => {
+        const amount = parseFloat(document.getElementById('expense-amount').value);
+        const category = document.getElementById('expense-category').value.trim();
+        const date = document.getElementById('expense-date').value;
+        const note = document.getElementById('expense-note').value.trim();
+        if (!amount || !category) return alert('请填写金额和分类');
+        const expenses = DB.get('expense', []);
+        expenses.push({ id: genId(), amount, category, date, note });
+        DB.set('expense', expenses);
+        renderPage('expense');
+        renderHome();
+      });
+      break;
+    case 'sale':
+      document.getElementById('save-sale')?.addEventListener('click', () => {
+        const customer = document.getElementById('sale-customer').value;
+        const productId = parseInt(document.getElementById('sale-product').value);
+        const qty = parseInt(document.getElementById('sale-qty').value);
+        const price = parseFloat(document.getElementById('sale-price').value);
+        const date = document.getElementById('sale-date').value;
+        const status = document.getElementById('sale-status').value;
+        if (!customer || !productId || !qty || !price) return alert('请完整填写');
+        // 扣库存
+        const products = DB.get('products', []);
+        const prod = products.find(p => p.id === productId);
+        if (!prod) return alert('商品不存在');
+        if (prod.stock < qty) return alert(`库存不足（剩余${prod.stock}）`);
+        prod.stock -= qty;
+        DB.set('products', products);
+        // 保存销售单
+        const sales = DB.get('sales', []);
+        sales.push({ id: genId(), customer, productId, qty, price, total: qty*price, date, status });
+        DB.set('sales', sales);
+        renderPage('sale');
+        renderHome();
+      });
+      break;
+    case 'purchase':
+      document.getElementById('save-purchase')?.addEventListener('click', () => {
+        const supplier = document.getElementById('purchase-supplier').value;
+        const productId = parseInt(document.getElementById('purchase-product').value);
+        const qty = parseInt(document.getElementById('purchase-qty').value);
+        const price = parseFloat(document.getElementById('purchase-price').value);
+        const date = document.getElementById('purchase-date').value;
+        if (!supplier || !productId || !qty || !price) return alert('请完整填写');
+        // 增加库存
+        const products = DB.get('products', []);
+        const prod = products.find(p => p.id === productId);
+        if (!prod) return alert('商品不存在');
+        prod.stock += qty;
+        // 更新商品价格（可选）
+        prod.price = price;
+        DB.set('products', products);
+        // 保存采购记录
+        const purchases = DB.get('purchases', []);
+        purchases.push({ id: genId(), supplier, productId, qty, price, total: qty*price, date });
+        DB.set('purchases', purchases);
+        renderPage('purchase');
+        renderHome();
+      });
+      break;
+    case 'inventory':
+      document.getElementById('add-product')?.addEventListener('click', () => {
+        const name = document.getElementById('new-product-name').value.trim();
+        const price = parseFloat(document.getElementById('new-product-price').value);
+        const stock = parseInt(document.getElementById('new-product-stock').value);
+        if (!name || !price || isNaN(stock)) return alert('请完整填写');
+        const products = DB.get('products', []);
+        products.push({ id: genId(), name, price, stock });
+        DB.set('products', products);
+        renderPage('inventory');
+        renderHome();
+      });
+      break;
+    case 'customer':
+      document.getElementById('add-customer')?.addEventListener('click', () => {
+        const name = document.getElementById('customer-name').value.trim();
+        const phone = document.getElementById('customer-phone').value.trim();
+        if (!name) return alert('请输入客户名称');
+        const customers = DB.get('customers', []);
+        customers.push({ id: genId(), name, phone });
+        DB.set('customers', customers);
+        renderPage('customer');
+        renderHome();
+      });
+      break;
+    case 'supplier':
+      document.getElementById('add-supplier')?.addEventListener('click', () => {
+        const name = document.getElementById('supplier-name').value.trim();
+        const phone = document.getElementById('supplier-phone').value.trim();
+        if (!name) return alert('请输入供应商名称');
+        const suppliers = DB.get('suppliers', []);
+        suppliers.push({ id: genId(), name, phone });
+        DB.set('suppliers', suppliers);
+        renderPage('supplier');
+        renderHome();
+      });
+      break;
+  }
+}
+
+// ==================== 全局删除函数 ====================
+function deleteItem(key, id) {
+  if (!confirm('确认删除？')) return;
+  let data = DB.get(key, []);
+  data = data.filter(item => item.id != id);
+  DB.set(key, data);
+  // 刷新当前页
+  const activePage = document.querySelector('.page.active');
+  if (activePage === detailPage) {
+    // 重新渲染当前详情页 (需要获取type)
+    const type = getCurrentType();
+    if (type) renderPage(type);
+  }
+  renderHome();
+}
+// 获取当前显示的类型 (从detail-content中推断或存储)
+function getCurrentType() {
+  // 简单方案：从页面的标题或内容判断，我们用个全局变量
+  return window._currentType || 'home';
+}
+// 在renderPage里记录类型
+const origRender = renderPage;
+renderPage = function(type) {
+  window._currentType = type;
+  origRender(type);
+};
+
+// ==================== 编辑商品 ====================
+function editProduct(id) {
+  const products = DB.get('products', []);
+  const prod = products.find(p => p.id == id);
+  if (!prod) return;
+  const newName = prompt('商品名称', prod.name);
+  if (newName !== null) prod.name = newName;
+  const newPrice = prompt('单价', prod.price);
+  if (newPrice !== null) prod.price = parseFloat(newPrice) || prod.price;
+  const newStock = prompt('库存数量', prod.stock);
+  if (newStock !== null) prod.stock = parseInt(newStock) || prod.stock;
+  DB.set('products', products);
+  renderPage('inventory');
+  renderHome();
+}
+
+// ==================== 首页待办更新 ====================
+function renderHome() {
+  // 计算待办数量
+  const sales = DB.get('sales', []);
+  const products = DB.get('products', []);
+  const todayStr = today();
+
+  // 应收逾期：假设所有销售单都为应收，且状态不是“已完成”的，日期小于今天视为逾期
+  const overdue = sales.filter(s => s.status !== '已完成' && s.date < todayStr).length;
+  // 今日待收款：今天创建的销售单，且状态不是“已完成”
+  const todayReceivable = sales.filter(s => s.date === todayStr && s.status !== '已完成').length;
+  // 待发货：状态为“待发货”
+  const toShip = sales.filter(s => s.status === '待发货').length;
+  // 临期/缺货：库存小于5的商品数量（模拟临期）
+  const lowStock = products.filter(p => p.stock < 5).length;
+
+  document.querySelector('#todo-grid .todo-item:nth-child(1) .todo-count').innerHTML = `${overdue}<span>笔</span>`;
+  document.querySelector('#todo-grid .todo-item:nth-child(2) .todo-count').innerHTML = `${todayReceivable}<span>笔</span>`;
+  document.querySelector('#todo-grid .todo-item:nth-child(3) .todo-count').innerHTML = `${toShip}<span>单</span>`;
+  document.querySelector('#todo-grid .todo-item:nth-child(4) .todo-count').innerHTML = `${lowStock}<span>个</span>`;
+  document.getElementById('todo-badge').textContent = overdue + todayReceivable + toShip + lowStock;
+}
+
+// ==================== 待办“全部”链接 ====================
+document.getElementById('todo-detail-link').addEventListener('click', () => {
+  // 跳转到一个待办列表页，简单跳转到报表页
+  showPage('detail');
+  renderPage('report');
+});
+
+// ==================== 编辑常用应用 ====================
+document.getElementById('edit-apps').addEventListener('click', () => {
+  alert('可在此配置常用应用（演示未实现）');
+});
+
+// ==================== 启动 ====================
+renderHome();
+showPage('home');
+
+</script>
+</body>
+</html>
